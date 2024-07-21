@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arrastar, soltar, ligar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+        #canvas {
+            width: 500px;
+            height: 300px;
+            border: 2px solid #ccc;
+            margin: 20px 20px;
+            position: relative;
+        }
+        .draggable {
+            width: 100px;
+            height: 100px;
+            color: white;
+            text-align: center;
+            line-height: 100px;
+            position: absolute;
+            cursor: grab;
+        }
+        .blue {
+            background-color: #3498db;
+        }
+        .green {
+            background-color: #2ecc71;
+        }
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<div id="canvas">
+    <!-- Quadrados para ser arrastados -->
+    <div class="draggable blue" style="top: 0; left: 0;"></div>
+    <div class="draggable green" style="top: 120px; left: 120px;"></div>
+    <!-- Canvas desenhar a linha de ligação -->
+    <svg id="svgCanvas"></svg>
+</div>
+
+<script>
+    let selectedElement = null; 
+    let offsetX = 0; 
+    let offsetY = 0; 
+    let startElement = null; 
+    let endElement = null; 
+    let line = null; 
+
+    // Obtém referências aos elementos DOM
+    const canvas = document.getElementById('canvas');
+    const svgCanvas = document.getElementById('svgCanvas');
+    const draggables = document.querySelectorAll('.draggable');
+
+    // Adiciona eventos para tornar os elementos arrastáveis
+    draggables.forEach(draggable => {
+        draggable.addEventListener('mousedown', (e) => {
+            // Inicia o arraste do elemento
+            selectedElement = e.target;
+            offsetX = e.clientX - selectedElement.getBoundingClientRect().left;
+            offsetY = e.clientY - selectedElement.getBoundingClientRect().top;
+            selectedElement.style.cursor = 'grabbing';
+        });
+
+        // Evento para criar a linha de ligação
+        draggable.addEventListener('dblclick', (e) => {
+            if (!startElement) {
+                startElement = e.target; // Define o elemento de partida da linha
+            } else if (!endElement && e.target !== startElement) {
+                endElement = e.target; // Define o elemento de destino da linha
+                const startX = startElement.offsetLeft + startElement.offsetWidth / 2;
+                const startY = startElement.offsetTop + startElement.offsetHeight / 2;
+                const endX = endElement.offsetLeft + endElement.offsetWidth / 2;
+                const endY = endElement.offsetTop + endElement.offsetHeight / 2;
+                // Cria um novo elemento SVG de linha
+                line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', startX);
+                line.setAttribute('y1', startY);
+                line.setAttribute('x2', endX);
+                line.setAttribute('y2', endY);
+                line.setAttribute('stroke', 'black');
+                line.setAttribute('stroke-width', '2');
+                svgCanvas.appendChild(line);
+            }
+        });
+
+        // Evento para soltar o elemento arrastado
+        draggable.addEventListener('mouseup', () => {
+            if (selectedElement) {
+                selectedElement.style.cursor = 'grab';
+                selectedElement = null;
+            }
+        });
+    });
+
+    // Para atualizar elemento pra arrastar
+    canvas.addEventListener('mousemove', (e) => {
+        if (selectedElement) {
+            const newX = e.clientX - offsetX; // Calcula a nova posição do elemento
+            const newY = e.clientY - offsetY;
+            selectedElement.style.left = `${newX}px`;
+            selectedElement.style.top = `${newY}px`;
+
+            // Atualiza a linha quando desenhando
+            if (line) {
+                const startX = startElement.offsetLeft + startElement.offsetWidth / 2;
+                const startY = startElement.offsetTop + startElement.offsetHeight / 2;
+                const endX = endElement ? (endElement.offsetLeft + endElement.offsetWidth / 2) : newX + selectedElement.offsetWidth / 2;
+                const endY = endElement ? (endElement.offsetTop + endElement.offsetHeight / 2) : newY + selectedElement.offsetHeight / 2;
+                line.setAttribute('x1', startX);
+                line.setAttribute('y1', startY);
+                line.setAttribute('x2', endX);
+                line.setAttribute('y2', endY);
+            }
+        }
+    });
+
+    // Para cancelar o arraste ao soltar o botão do mouse
+    canvas.addEventListener('mouseup', () => {
+        selectedElement = null;
+    });
+</script>
+
+</body>
+</html>
